@@ -1,0 +1,38 @@
+---
+- name: virus total counting for a URL
+  hosts: localhost
+  gather_facts: false
+  vars:
+    api_key: MyAPIKeyHere
+    # This is the URL to be tested
+    test_url: http://malware.wicar.org/
+    # Setting up the counting variable
+    total_mal: 0
+
+  tasks:
+  - name: hit virus total and save results to variable
+    uri:
+      url: "https://www.virustotal.com/vtapi/v2/url/report?apikey={{ api_key }}&resource={{ test_url }}"
+      return_content: yes
+    register: total_out
+
+#  - name: display total_out
+#    debug:
+#      var: total_out.json.scans
+
+  - name: set new variable
+    set_fact:
+      total_scans: "{{ total_out.json.scans | dict2items }}"
+
+  - debug:
+      var: total_scans
+
+  - name: total_out counts
+    when: item.value.detected
+    set_fact:
+      total_mal: "{{ total_mal | int + 1 }}"
+    loop: "{{ total_scans}}"
+
+  - name: output virus false total
+    debug:
+      var: total_mal
